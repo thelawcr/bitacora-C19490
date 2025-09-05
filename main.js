@@ -6,6 +6,36 @@ const paginationContainer = document.getElementById("pagination");
 let registros = [];
 let currentPage = 1;
 const registrosPorPagina = 10;
+//
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRihrn2T9b9-vQJwlJSIInWY77Tbcd4VtF3ty_wPoxqic02ZDovHjMW8qjZd8VSJjnxPoQwT8CtBG3Z/pub?output=csv";
+
+// Al inicio del script, justo después de declarar variables:
+cargarRegistrosDesdeSheet();
+
+// Función para leer datos:
+async function cargarRegistrosDesdeSheet() {
+  try {
+    const response = await fetch(SHEET_URL);
+    if (!response.ok) throw new Error("HTTP status " + response.status);
+    const data = await response.text();
+    const filas = data.trim().split("\n").map(r => r.split(","));
+    const headers = filas[0].map(h => h.trim());
+    const registrosSheet = filas.slice(1).map(row => ({
+      fecha: row[0]?.trim(),
+      mes: row[1]?.trim(),
+      actividad: row[2]?.trim(),
+      detalle: row[3]?.trim(),
+      cantidadHoras: parseFloat(row[4]) || 0,
+      evidencia: null
+    })).filter(r => r.fecha); // excluye filas vacías
+
+    registros.push(...registrosSheet);
+    mostrarRegistros();
+
+  } catch (err) {
+    console.error("Error al cargar datos desde Google Sheets:", err);
+  }
+}
 
 // 🚀 Guardar registro desde el formulario
 form.addEventListener("submit", function (e) {
