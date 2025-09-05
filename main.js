@@ -204,3 +204,77 @@ document.getElementById("archivoExcel").addEventListener("change", function (e) 
     }
   });
 });
+// =============================
+// CONFIGURACIÓN
+// =============================
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRihrn2T9b9-vQJwlJSIInWY77Tbcd4VtF3ty_wPoxqic02ZDovHjMW8qjZd8VSJjnxPoQwT8CtBG3Z/pub?gid=0&single=true&output=csv"; 
+// 👆 Reemplaza XXXXX con tu ID de Google Sheets
+
+// =============================
+// FUNCIONES PRINCIPALES
+// =============================
+
+// Función para cargar datos desde Google Sheets (CSV)
+async function cargarDesdeGoogleSheets() {
+  try {
+    const response = await fetch(SHEET_URL);
+    const data = await response.text();
+
+    // Convertir CSV a array de objetos
+    const filas = data.split("\n").map(r => r.split(","));
+    const headers = filas[0].map(h => h.trim());
+    const registros = filas.slice(1).map(fila => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = fila[i] ? fila[i].trim() : "");
+      return obj;
+    });
+
+    mostrarEnTabla(registros);
+
+  } catch (error) {
+    console.error("Error cargando Google Sheets:", error);
+  }
+}
+
+// Mostrar registros en la tabla
+function mostrarEnTabla(registros) {
+  const tbody = document.querySelector("#bitacoraTable tbody");
+  tbody.innerHTML = "";
+
+  registros.forEach((registro) => {
+    const row = document.createElement("tr");
+
+    // Asume que en tu Google Sheets tenés estas columnas:
+    // Fecha, Mes, Actividad, Detalle, CantidadHoras
+    row.innerHTML = `
+      <td>${registro["Fecha"] || ""}</td>
+      <td>${registro["Mes"] || ""}</td>
+      <td>${registro["Actividad"] || ""}</td>
+      <td>${registro["Detalle"] || ""}</td>
+      <td>${registro["CantidadHoras"] || ""}</td>
+    `;
+
+    tbody.appendChild(row);
+  });
+
+  calcularTotalHoras(registros);
+}
+
+// Calcular total de horas (si existe la columna)
+function calcularTotalHoras(registros) {
+  let total = 0;
+  registros.forEach(r => {
+    const horas = parseFloat(r["CantidadHoras"]);
+    if (!isNaN(horas)) total += horas;
+  });
+
+  document.getElementById("totalHoras").textContent = `Total de horas: ${total}`;
+}
+
+// =============================
+// INICIO
+// =============================
+document.addEventListener("DOMContentLoaded", () => {
+  cargarDesdeGoogleSheets();
+});
+
